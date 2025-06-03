@@ -114,6 +114,14 @@ class UserService:
 
         return None
 
+    async def update_token_count(self, id: str, token_count: int) -> Optional[User]:
+        try:
+            return await self.repo.update_token_count(id, token_count)
+        except NoResultFound as e:
+            self.log.warning("UserRepository: %s" % e)
+        except Exception as e:
+            self.log.error("UserRepository: %s" % e)
+
     async def is_admin(self, id: str) -> bool:
         try:
             user = await self.repo.get_one(id)

@@ -10,12 +10,23 @@ from redis.asyncio.client import Redis
 
 from config import Config, load_config
 from database import DefaultDatabase, PostgresDatabase
-from handlers import commands_router
+from handlers import cleanup_old_payments, commands_router, image_processing_router, payments_router, user_router
 from keyboards import setup_menu
 from logger import get_logger
 from middleware import setup as setup_middlewares
 from repository import UserRepository
-from service import UserService
+from service import OpenAIService, PaymentService, UserService
+
+
+async def periodic_cleanup(logger: logging.Logger):
+    """Периодическая очистка старых платежей"""
+    while True:
+        try:
+            await cleanup_old_payments()
+            await asyncio.sleep(3600)  # Очищаем каждый час
+        except Exception as e:
+            logger.error(f"Error in periodic cleanup: {e}")
+            await asyncio.sleep(3600)
 
 
 async def shutdown(
@@ -101,12 +112,22 @@ async def main() -> None:
     logger.debug("Registering services...")
     user_service = UserService(user_repository, logger)
     dp.workflow_data["user_service"] = user_service
+    openai_service = OpenAIService(config.openai.api_key, logger)
+    dp.workflow_data["openai_service"] = openai_service
+    payment_service = PaymentService(config.yookassa.shop_id, config.yookassa.secret_key, logger)
+    dp.workflow_data["payment_service"] = payment_service
 
     logger.debug("Registering routers...")
     dp.include_router(commands_router)
+    dp.include_router(payments_router)
+    dp.include_router(user_router)
+    dp.include_router(image_processing_router)
 
     logger.debug("Registering middlewares...")
     setup_middlewares(dp, logger, user_service=user_service)
+
+    logger.debug("Starting periodic cleanup task...")
+    cleanup_task = asyncio.create_task(periodic_cleanup(logger))
 
     # Graceful shutdown handling
     try:
@@ -115,6 +136,7 @@ async def main() -> None:
     except Exception as e:
         logger.fatal("An error occurred: %s", e)
     finally:
+        cleanup_task.cancel()
         await shutdown(bot, dp, logger, redis, db)
 
 

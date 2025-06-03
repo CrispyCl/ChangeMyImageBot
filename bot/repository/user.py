@@ -119,5 +119,20 @@ class UserRepository:
                 await session.rollback()
                 raise e
 
+    async def update_token_count(self, id: str, token_count: int) -> User:
+        async with self.db.get_session() as session:
+            session: AsyncSession
+            try:
+                user = await session.get(User, id)
+                if user is None:
+                    raise NoResultFound(f"User with id={id} does not exist")
+                user.token_count = token_count
+                await session.commit()
+                await session.refresh(user)
+                return user
+            except Exception as e:
+                await session.rollback()
+                raise e
+
 
 __all__ = ["UserRepository"]

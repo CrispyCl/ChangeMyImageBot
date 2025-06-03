@@ -12,7 +12,7 @@ class User(Base):
     id: Mapped[str] = mapped_column(String(20), primary_key=True)
     username: Mapped[str] = mapped_column(String(32), nullable=False)
     phone_number: Mapped[str] = mapped_column(String(32), nullable=True)
-    token_count: Mapped[int] = mapped_column(Integer, default=10)
+    token_count: Mapped[int] = mapped_column(Integer, default=5)
     is_staff: Mapped[bool] = mapped_column(Boolean, default=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
     date_joined: Mapped[datetime] = mapped_column(DateTime, default=datetime.now())

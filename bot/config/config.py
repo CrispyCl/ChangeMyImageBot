@@ -20,11 +20,25 @@ class BotConfig:
 
 
 @dataclass
+class OpenAIConfig:
+    api_key: str
+    model: str
+
+
+@dataclass
+class YooKassaConfig:
+    shop_id: str
+    secret_key: str
+
+
+@dataclass
 class Config:
     bot: BotConfig
     logger: LoggerConfig
     redis: RedisConfig
     postgres: PostgresConfig
+    openai: OpenAIConfig
+    yookassa: YooKassaConfig
 
 
 def load_config(path: str | None = None) -> Config:
@@ -59,6 +73,14 @@ def load_config(path: str | None = None) -> Config:
             db_name=env("POSTGRES_DB", default=""),
             host=env("POSTGRES_HOST", default="localhost"),
             port=env.int("POSTGRES_PORT", default=5432),
+        ),
+        openai=OpenAIConfig(
+            api_key=env("OPENAI_API_KEY", default=""),
+            model=env("OPENAI_MODEL", default="dall-e-3"),
+        ),
+        yookassa=YooKassaConfig(
+            shop_id=env("YOOKASSA_SHOP_ID", default=""),
+            secret_key=env("YOOKASSA_SECRET_KEY", default=""),
         ),
     )
 
