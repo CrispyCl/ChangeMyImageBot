@@ -57,7 +57,7 @@ class OpenAIService:
             return None
 
         except Exception as e:
-            self.logger.error(f"Error transforming image: {e}")
+            self.logger.error("Error transforming image: %s" % e)
             return None
 
     async def _download_image(self, image_url: str) -> Optional[bytes]:
@@ -69,7 +69,7 @@ class OpenAIService:
                         return await response.read()
             return None
         except Exception as e:
-            self.logger.error(f"Error downloading image: {e}")
+            self.logger.error("Error downloading image: %s" % e)
             return None
 
     async def _create_file(self, file_data: bytes, filename: str) -> Optional[str]:
@@ -90,7 +90,7 @@ class OpenAIService:
                 os.unlink(temp_file_path)  # noqa
 
         except Exception as e:
-            self.logger.error(f"Error creating file: {e}")
+            self.logger.error("Error creating file: %s" % e)
             return None
 
     async def _upload_image_from_base64(self, base64_image: str) -> Optional[str]:
@@ -98,7 +98,7 @@ class OpenAIService:
         try:
             return f"data:image/png;base64,{base64_image}"
         except Exception as e:
-            self.logger.error(f"Error uploading image: {e}")
+            self.logger.error("Error uploading image: %s" % e)
             return None
 
     def _get_style_prompt(self, style: str) -> str:
@@ -176,7 +176,7 @@ class OpenAIService:
             return response.choices[0].message.content
 
         except Exception as e:
-            self.logger.error(f"Error analyzing image: {e}")
+            self.logger.error("Error analyzing image: %s" % e)
             return None
 
 
