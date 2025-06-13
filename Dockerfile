@@ -15,6 +15,8 @@ COPY ./bot ./bot
 
 FROM python:3.13-alpine
 
+RUN apk add --no-cache curl ca-certificates
+
 WORKDIR /app
 
 COPY --from=production /app/venv /app/venv

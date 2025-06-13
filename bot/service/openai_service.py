@@ -57,7 +57,7 @@ class OpenAIService:
             return None
 
         except Exception as e:
-            self.logger.error("Error transforming image: %s" % e)
+            self.logger.error("Error transforming image: %s (%s)" % (e, type(e)))
             return None
 
     async def _download_image(self, image_url: str) -> Optional[bytes]:
