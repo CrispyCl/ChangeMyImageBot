@@ -17,6 +17,7 @@ class PaymentService:
             payment = Payment.create(
                 {
                     "amount": {"value": str(amount), "currency": "RUB"},
+                    "payment_method_data": {"type": "bank_card"},
                     "confirmation": {"type": "redirect", "return_url": "https://t.me/change_my_image_bot"},
                     "capture": True,
                     "description": description,

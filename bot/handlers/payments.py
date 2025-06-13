@@ -68,6 +68,7 @@ async def process_token_purchase(
     logger: Logger,
     user_service: UserService,
     bot: Bot,
+    state: FSMContext,
 ):
     if await phone_required(callback.message, current_user):
         await callback.answer()
@@ -86,6 +87,7 @@ async def process_token_purchase(
     )
 
     if payment_data:
+        await state.update_data(active_payment_url=payment_data["confirmation_url"])
         payment_id = payment_data["payment_id"]
 
         # Сохраняем информацию о платеже для отслеживания
@@ -104,8 +106,9 @@ async def process_token_purchase(
             f"💳 <b>Оплата токенов</b>\n\n"
             f"Пакет: {tokens} токенов\n"
             f"Сумма: {amount}₽\n\n"
-            f"Для оплаты перейдите по ссылке ниже:\n"
-            f"💡 <i>Токены будут зачислены автоматически после оплаты</i>"
+            f"💡 <i>Токены будут зачислены автоматически после оплаты</i>\n"
+            f"⚠️ Не выходите из этого меню до завершения оплаты, чтобы зачисление прошло корректно.\n\n"
+            f"Для оплаты перейдите по ссылке ниже:"
         )
 
         keyboard = InlineKeyboardMarkup(
@@ -139,7 +142,7 @@ async def track_payment_background(
 ):
     """Фоновая задача для отслеживания платежа"""
     sleep_time = 5
-    max_attempts = 10 * 60 / sleep_time  # Проверяем в течение 10 минут
+    max_attempts = 60 * 60 / sleep_time + 60  # Проверяем в течение 60 минут + минута
     attempt = 0
 
     while attempt < max_attempts:
@@ -162,7 +165,7 @@ async def track_payment_background(
             attempt += 1
 
     if attempt >= max_attempts and payment_id in active_payments:
-        del active_payments[payment_id]
+        active_payments[payment_id]["status"] = "cancelled"
 
 
 async def process_successful_payment(payment_id: str, bot: Bot, logger: Logger, user_service: UserService):
@@ -216,8 +219,6 @@ async def process_cancelled_payment(logger: Logger, payment_id: str, bot: Bot):
         return
 
     payment_info = active_payments[payment_id]
-    if payment_info["status"] != "pending":
-        return
 
     try:
         user_id = payment_info["user_id"]
@@ -248,6 +249,7 @@ async def check_payment_status(
     payment_service: PaymentService,
     bot: Bot,
     logger: Logger,
+    state: FSMContext,
 ):
     """Проверяет статус платежа вручную"""
     data_parts = str(callback.data).split("_")
@@ -292,6 +294,7 @@ async def check_payment_status(
         keyboard = ProfileKeyboard()
         await callback.message.edit_text(success_text, reply_markup=keyboard())  # type: ignore
     else:
+        data = await state.get_data()
         pending_text = (
             "⏳ <b>Платеж в обработке</b>\n\n"
             "Платеж еще не завершен.\n"
@@ -301,6 +304,7 @@ async def check_payment_status(
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
+                [InlineKeyboardButton(text="💳 Оплатить", url=data.get("active_payment_url"))],
                 [InlineKeyboardButton(text="🔄 Проверить снова", callback_data=f"check_payment_{payment_id}_{tokens}")],
                 [InlineKeyboardButton(text="🔙 Назад", callback_data="profile")],
             ],
@@ -348,8 +352,8 @@ async def cleanup_old_payments():
     expired_payments = []
 
     for payment_id, payment_info in active_payments.items():
-        # Удаляем платежи старше получаса
-        if current_time - payment_info["created_at"] > timedelta(minutes=30):
+        # Удаляем платежи старше полутора часов
+        if current_time - payment_info["created_at"] > timedelta(minutes=90):
             expired_payments.append(payment_id)
 
     for payment_id in expired_payments:
