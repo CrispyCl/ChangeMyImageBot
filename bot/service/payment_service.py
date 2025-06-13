@@ -11,16 +11,29 @@ class PaymentService:
         Configuration.secret_key = secret_key
         self.logger = logger
 
-    async def create_payment(self, amount: int, description: str, user_id: str) -> Optional[dict]:
+    async def create_payment(self, amount: int, description: str, user_id: str, phone_number: str) -> Optional[dict]:
         """Создает платеж в ЮKassa"""
         try:
             payment = Payment.create(
                 {
                     "amount": {"value": str(amount), "currency": "RUB"},
-                    "confirmation": {"type": "redirect", "return_url": "https://t.me/your_bot"},
+                    "confirmation": {"type": "redirect", "return_url": "https://t.me/change_my_image_bot"},
                     "capture": True,
                     "description": description,
                     "metadata": {"user_id": user_id},
+                    "receipt": {
+                        "customer": {"phone": phone_number},
+                        "items": [
+                            {
+                                "description": description,
+                                "quantity": "1.0",
+                                "amount": {"value": str(amount), "currency": "RUB"},
+                                "vat_code": 1,  # Без НДС
+                                "payment_mode": "full_payment",
+                                "payment_subject": "service",
+                            },
+                        ],
+                    },
                 },
                 uuid.uuid4(),
             )

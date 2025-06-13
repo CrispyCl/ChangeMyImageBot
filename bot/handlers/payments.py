@@ -4,9 +4,9 @@ from logging import Logger
 
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from keyboards import ProfileKeyboard, TokenPurchaseKeyboard
+from keyboards import ProfileKeyboard, RequestPhoneNumberKeyboard, TokenPurchaseKeyboard
 from models import User
 from service import PaymentService, UserService
 from states import ImageProcessing
@@ -15,6 +15,49 @@ router = Router()
 
 # Словарь для отслеживания активных платежей
 active_payments = {}
+
+
+async def phone_required(event, current_user: User) -> bool:
+    if current_user and not current_user.phone_number:
+        if event:
+            await request_phone_number(event)
+            return True
+
+    return False
+
+
+async def request_phone_number(event):
+    """Запрос номера телефона у пользователя"""
+    text = (
+        "📱 <b>Требуется номер телефона</b>\n\n"
+        "Для покупки токенов необходимо предоставить ваш номер телефона.\n"
+        "Нажмите кнопку ниже, чтобы поделиться номером:"
+    )
+
+    keyboard = RequestPhoneNumberKeyboard()()
+
+    if isinstance(event, Message):
+        await event.answer(text, reply_markup=keyboard)
+    elif isinstance(event, CallbackQuery):
+        await event.message.answer(text, reply_markup=keyboard)  # type: ignore
+        await event.answer("Необходимо предоставить номер телефона")
+
+
+@router.message(F.contact)
+async def process_contact(message: Message, current_user: User, user_service: UserService):
+    """Обработка полученного контакта"""
+    if message.contact and str(message.contact.user_id) == current_user.id:
+        await user_service.update_phone_number(current_user.id, message.contact.phone_number)
+
+        await message.answer(
+            "✅ <b>Спасибо!</b>\n\n" "Ваш номер телефона сохранен. Теперь вы можете совершать оплату.",
+            reply_markup=ProfileKeyboard()(),
+        )
+    else:
+        await message.answer(
+            "❌ Пожалуйста, поделитесь своим номером телефона, используя кнопку ниже.",
+            reply_markup=RequestPhoneNumberKeyboard()(),
+        )
 
 
 @router.callback_query(F.data.startswith("buy_tokens_"))
@@ -26,6 +69,9 @@ async def process_token_purchase(
     user_service: UserService,
     bot: Bot,
 ):
+    if await phone_required(callback.message, current_user):
+        await callback.answer()
+        return
     """Обрабатывает покупку токенов"""
     data_parts = str(callback.data).split("_")
     tokens = int(data_parts[2])
@@ -36,6 +82,7 @@ async def process_token_purchase(
         amount=amount,
         description=f"Покупка {tokens} токенов",
         user_id=current_user.id,
+        phone_number=current_user.phone_number,
     )
 
     if payment_data:
@@ -61,14 +108,12 @@ async def process_token_purchase(
             f"💡 <i>Токены будут зачислены автоматически после оплаты</i>"
         )
 
-        from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text="💳 Оплатить", url=payment_data["confirmation_url"])],
                 [
                     InlineKeyboardButton(
-                        text="✅ Проверить оплату",
+                        text="Обновить статус оплаты 🔄",
                         callback_data=f"check_payment_{payment_id}_{tokens}",
                     ),
                 ],
@@ -93,7 +138,8 @@ async def track_payment_background(
     user_service: UserService,
 ):
     """Фоновая задача для отслеживания платежа"""
-    max_attempts = 60  # Проверяем в течение 30 минут
+    sleep_time = 5
+    max_attempts = 10 * 60 / sleep_time  # Проверяем в течение 10 минут
     attempt = 0
 
     while attempt < max_attempts:
@@ -107,16 +153,16 @@ async def track_payment_background(
                 await process_cancelled_payment(logger, payment_id, bot)
                 break
 
-            await asyncio.sleep(30)
+            await asyncio.sleep(sleep_time)
             attempt += 1
 
         except Exception as e:
             logger.error(f"Error tracking payment {payment_id}: {e}")
-            await asyncio.sleep(30)
+            await asyncio.sleep(sleep_time)
             attempt += 1
 
     if attempt >= max_attempts and payment_id in active_payments:
-        active_payments[payment_id]["status"] = "expired"
+        del active_payments[payment_id]
 
 
 async def process_successful_payment(payment_id: str, bot: Bot, logger: Logger, user_service: UserService):
@@ -135,7 +181,7 @@ async def process_successful_payment(payment_id: str, bot: Bot, logger: Logger, 
 
         current_user = await user_service.get_one(user_id)
         if current_user:
-            updated_user = await user_service.update_token_count(user_id, tokens)
+            updated_user = await user_service.update_token_count(user_id, current_user.token_count + tokens)
 
             if updated_user:
                 # Отправляем уведомление пользователю
@@ -260,7 +306,8 @@ async def check_payment_status(
             ],
         )
 
-        await callback.message.edit_text(pending_text, reply_markup=keyboard)  # type: ignore
+        await callback.message.answer(pending_text, reply_markup=keyboard)  # type: ignore
+        await callback.message.delete()  # type: ignore
 
     await callback.answer()
 
@@ -301,8 +348,8 @@ async def cleanup_old_payments():
     expired_payments = []
 
     for payment_id, payment_info in active_payments.items():
-        # Удаляем платежи старше 1 часа
-        if current_time - payment_info["created_at"] > timedelta(hours=1):
+        # Удаляем платежи старше получаса
+        if current_time - payment_info["created_at"] > timedelta(minutes=30):
             expired_payments.append(payment_id)
 
     for payment_id in expired_payments:

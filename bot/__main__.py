@@ -23,10 +23,10 @@ async def periodic_cleanup(logger: logging.Logger):
     while True:
         try:
             await cleanup_old_payments()
-            await asyncio.sleep(3600)  # Очищаем каждый час
+            await asyncio.sleep(30 * 60)  # Очищаем каждые пол часа
         except Exception as e:
             logger.error(f"Error in periodic cleanup: {e}")
-            await asyncio.sleep(3600)
+            await asyncio.sleep(30 * 60)
 
 
 async def shutdown(
