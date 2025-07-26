@@ -20,9 +20,8 @@ class BotConfig:
 
 
 @dataclass
-class OpenAIConfig:
+class GeminiConfig:
     api_key: str
-    model: str
 
 
 @dataclass
@@ -37,7 +36,7 @@ class Config:
     logger: LoggerConfig
     redis: RedisConfig
     postgres: PostgresConfig
-    openai: OpenAIConfig
+    gemini: GeminiConfig
     yookassa: YooKassaConfig
 
 
@@ -74,9 +73,8 @@ def load_config(path: str | None = None) -> Config:
             host=env("POSTGRES_HOST", default="localhost"),
             port=env.int("POSTGRES_PORT", default=5432),
         ),
-        openai=OpenAIConfig(
-            api_key=env("OPENAI_API_KEY", default=""),
-            model=env("OPENAI_MODEL", default="dall-e-3"),
+        gemini=GeminiConfig(
+            api_key=env("GEMINI_API_KEY", default=""),
         ),
         yookassa=YooKassaConfig(
             shop_id=env("YOOKASSA_SHOP_ID", default=""),

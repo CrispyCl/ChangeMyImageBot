@@ -15,7 +15,7 @@ from keyboards import setup_menu
 from logger import get_logger
 from middleware import setup as setup_middlewares
 from repository import UserRepository
-from service import OpenAIService, PaymentService, UserService
+from service import GeminiImageService, PaymentService, UserService
 
 
 async def periodic_cleanup(logger: logging.Logger):
@@ -23,10 +23,10 @@ async def periodic_cleanup(logger: logging.Logger):
     while True:
         try:
             await cleanup_old_payments()
-            await asyncio.sleep(3600)  # Очищаем каждый час
+            await asyncio.sleep(30 * 60)  # Очищаем каждые пол часа
         except Exception as e:
             logger.error(f"Error in periodic cleanup: {e}")
-            await asyncio.sleep(3600)
+            await asyncio.sleep(30 * 60)
 
 
 async def shutdown(
@@ -112,8 +112,8 @@ async def main() -> None:
     logger.debug("Registering services...")
     user_service = UserService(user_repository, logger)
     dp.workflow_data["user_service"] = user_service
-    openai_service = OpenAIService(config.openai.api_key, logger)
-    dp.workflow_data["openai_service"] = openai_service
+    image_service = GeminiImageService(config.gemini.api_key, logger)
+    dp.workflow_data["image_service"] = image_service
     payment_service = PaymentService(config.yookassa.shop_id, config.yookassa.secret_key, logger)
     dp.workflow_data["payment_service"] = payment_service
 

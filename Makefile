@@ -70,4 +70,4 @@ docker-down:
 	@docker compose down
 
 # Restart containers
-docker-restart: docker-down docker-up
+docker-restart: docker-down docker-up-d
