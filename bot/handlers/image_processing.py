@@ -1,4 +1,3 @@
-import base64
 from logging import Logger
 
 from aiogram import Bot, F, Router
@@ -15,7 +14,7 @@ from aiogram.types import (
 
 from keyboards import StyleSelectionKeyboard
 from models import User
-from service import OpenAIService, UserService
+from service import GeminiImageService, UserService
 from states import ImageProcessing
 
 router = Router()
@@ -75,7 +74,7 @@ async def process_style_selection(
     state: FSMContext,
     current_user: User,
     user_service: UserService,
-    openai_service: OpenAIService,
+    image_service: GeminiImageService,
     bot: Bot,
     logger: Logger,
 ):
@@ -115,41 +114,36 @@ async def process_style_selection(
 
     try:
         file = await bot.get_file(photo_file_id)
-        file_url = f"https://api.telegram.org/file/bot{bot.token}/{file.file_path}"
+        file_data = await bot.download_file(str(file.file_path))
+        if not file_data:
+            raise ValueError("Ошибка: не удалось получить данные изображения (пустой файл).")
 
-        result_url = await openai_service.transform_image(file_url, style)
+        image_bytes = file_data.read()
 
-        if result_url:
+        result_image = await image_service.transform_image(image_bytes=image_bytes, style=style)
+
+        if result_image:
+            photo = BufferedInputFile(result_image, filename=f"styled_{style}.png")
             success_text = (
                 f"✅ <b>Преобразование завершено!</b>\n\n"
                 f"🎨 Стиль: {get_style_name(style)}\n"
                 f"💳 Остаток токенов: {updated_user.token_count}"
             )
 
-            if result_url.startswith("data:image"):
-                base64_data = result_url.split(",")[1]
-                image_data = base64.b64decode(base64_data)
+            keyboard = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="🔄 Другой стиль", callback_data="new_style")],
+                    [InlineKeyboardButton(text="📸 Новое фото", callback_data="new_photo")],
+                    [InlineKeyboardButton(text="🏠 Главное меню", callback_data="to_main")],
+                ],
+            )
 
-                photo = BufferedInputFile(image_data, filename=f"styled_{style}.png")
-
-                keyboard = InlineKeyboardMarkup(
-                    inline_keyboard=[
-                        [InlineKeyboardButton(text="🔄 Другой стиль", callback_data="new_style")],
-                        [InlineKeyboardButton(text="📸 Новое фото", callback_data="new_photo")],
-                        [InlineKeyboardButton(text="🏠 Главное меню", callback_data="to_main")],
-                    ],
-                )
-
-                await callback.message.answer_photo(  # type: ignore
-                    photo=photo,
-                    caption=success_text,
-                    reply_markup=keyboard,
-                )
-                await callback.message.delete()  # type: ignore
-            else:
-                # Если обычный URL
-                await callback.message.answer_photo(photo=result_url, caption=success_text)  # type: ignore
-                await callback.message.delete()  # type: ignore
+            await callback.message.answer_photo(  # type: ignore
+                photo=photo,
+                caption=success_text,
+                reply_markup=keyboard,
+            )
+            await callback.message.delete()  # type: ignore
         else:
             # Возвращаем токен при ошибке
             await user_service.repo.update_token_count(current_user.id, updated_user.token_count + 1)
