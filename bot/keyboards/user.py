@@ -1,5 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 
+from config import PAYMENT
+
 
 class MainUserKeyboard:
     def __call__(self, is_admin: bool) -> ReplyKeyboardMarkup:
@@ -64,11 +66,15 @@ class ProfileKeyboard:
 class TokenPurchaseKeyboard:
     def __call__(self) -> InlineKeyboardMarkup:
         buttons = [
-            [InlineKeyboardButton(text="150 токенов - 990₽", callback_data="buy_tokens_150_990")],
-            [InlineKeyboardButton(text="350 токенов - 1990₽", callback_data="buy_tokens_350_1990")],
-            [InlineKeyboardButton(text="800 токенов - 3990₽", callback_data="buy_tokens_800_3990")],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="profile")],
-        ]
+            [
+                InlineKeyboardButton(
+                    text=f"{PAYMENT[key]['token_count']} токенов - {PAYMENT[key]['price']}₽",
+                    callback_data=f"buy_tokens_{PAYMENT[key]['token_count']}_{PAYMENT[key]['price']}",
+                ),
+            ]
+            for key in PAYMENT
+        ] + [[InlineKeyboardButton(text="🔙 Назад", callback_data="profile")]]
+
         return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 

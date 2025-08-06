@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from config import PAYMENT
 from keyboards import ProfileKeyboard, TokenPurchaseKeyboard, ToMainMenuKeyboard
 from models import User
 from states import UserProfile
@@ -70,10 +71,8 @@ async def show_token_purchase(callback: CallbackQuery):
     purchase_text = (
         "💰 <b>Покупка токенов</b>\n\n"
         "Выберите пакет токенов:\n\n"
-        "🔹 150 токенов - 990₽\n"
-        "🔹 350 токенов - 1990₽ (скидка 15%)\n"
-        "🔹 800 токенов - 3990₽ (скидка 25%)\n\n"
-        "💡 Чем больше пакет, тем выгоднее цена!"
+        + "\n".join(f"🔹 {PAYMENT[key]['token_count']} токенов - {PAYMENT[key]['price']}₽" for key in PAYMENT.keys())
+        + "\n\n💡 Чем больше пакет, тем выгоднее цена!"
     )
 
     keyboard = TokenPurchaseKeyboard()

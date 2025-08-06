@@ -101,7 +101,7 @@ async def process_style_selection(
     processing_text = (
         f"🎨 <b>Преобразуем изображение</b>\n\n"
         f"Стиль: {get_style_name(style)}\n"
-        f"⏳ Обработка займет 30-60 секунд...\n\n"
+        f"⏳ Обработка займет 10-15 секунд...\n\n"
         f"💰 Списан 1 токен\n"
         f"💳 Остаток: {updated_user.token_count} токенов"
     )
@@ -179,9 +179,6 @@ async def process_style_selection(
         )
 
         await callback.message.edit_text(error_text, reply_markup=keyboard)  # type: ignore
-
-    finally:
-        await state.clear()
 
 
 @router.callback_query(F.data == "new_style")
