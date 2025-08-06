@@ -12,14 +12,6 @@ class MainUserKeyboard:
         return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 
-class ToMainMenuKeyboard:
-    def __call__(self) -> ReplyKeyboardMarkup:
-        return ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="🏠 Главное меню")]],
-            resize_keyboard=True,
-        )
-
-
 class RequestPhoneNumberKeyboard:
     def __call__(self) -> ReplyKeyboardMarkup:
         return ReplyKeyboardMarkup(
@@ -40,7 +32,7 @@ class StyleSelectionKeyboard:
             [InlineKeyboardButton(text="🌟 Фэнтези", callback_data="style_fantasy")],
             [InlineKeyboardButton(text="🤖 Киберпанк", callback_data="style_cyberpunk")],
             [InlineKeyboardButton(text="🎭 Карикатура", callback_data="style_cartoon")],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="to_main")],
+            [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_send_photo")],
         ]
         return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -73,14 +65,13 @@ class TokenPurchaseKeyboard:
                 ),
             ]
             for key in PAYMENT
-        ] + [[InlineKeyboardButton(text="🔙 Назад", callback_data="profile")]]
+        ] + [[InlineKeyboardButton(text="🔙 В профиль", callback_data="profile")]]
 
         return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 __all__ = [
     "MainUserKeyboard",
-    "ToMainMenuKeyboard",
     "StyleSelectionKeyboard",
     "PaymentKeyboard",
     "ProfileKeyboard",

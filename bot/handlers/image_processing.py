@@ -12,12 +12,50 @@ from aiogram.types import (
     PhotoSize,
 )
 
-from keyboards import StyleSelectionKeyboard
+from keyboards import StyleSelectionKeyboard, TokenPurchaseKeyboard
 from models import User
 from service import GeminiImageService, UserService
 from states import ImageProcessing
 
 router = Router()
+
+
+@router.callback_query(F.data == "back_to_send_photo")
+async def start_image_processing_callback(callback: CallbackQuery, state: FSMContext, current_user: User):
+    await start_image_processing(callback.message, state, current_user)
+    await callback.answer()
+    await callback.message.delete()  # type: ignore
+
+
+@router.message(F.text == "🎨 Изменить изображение")
+async def start_image_processing(message: Message, state: FSMContext, current_user: User):
+    """Начинает процесс обработки изображения"""
+    if current_user.token_count <= 0:
+        no_tokens_text = (
+            "😔 <b>Недостаточно токенов</b>\n\n"
+            "У вас нет токенов для генерации изображений.\n"
+            "Купите токены для продолжения работы!"
+        )
+        keyboard = TokenPurchaseKeyboard()
+        await message.answer(no_tokens_text, reply_markup=keyboard())
+        return
+
+    await state.set_state(ImageProcessing.waiting_for_photo)
+
+    instruction_text = (
+        f"📸 <b>Отправьте фотографию</b>\n\n"
+        f"Пришлите изображение, которое хотите изменить.\n"
+        f"Поддерживаются форматы: JPG, PNG\n\n"
+        f"💰 Стоимость: 1 токен\n"
+        f"💳 Ваш баланс: {current_user.token_count} токенов"
+    )
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🏠 Главное меню", callback_data="to_main")],
+        ],
+    )
+    await message.answer(instruction_text, reply_markup=keyboard)
 
 
 @router.message(StateFilter(ImageProcessing.waiting_for_photo), F.photo)
