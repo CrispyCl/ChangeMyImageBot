@@ -1,5 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 
+from config import PAYMENT
+
 
 class MainUserKeyboard:
     def __call__(self, is_admin: bool) -> ReplyKeyboardMarkup:
@@ -8,14 +10,6 @@ class MainUserKeyboard:
             [KeyboardButton(text="👤 Профиль"), KeyboardButton(text="💰 Баланс токенов")],
         ]
         return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
-
-
-class ToMainMenuKeyboard:
-    def __call__(self) -> ReplyKeyboardMarkup:
-        return ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="🏠 Главное меню")]],
-            resize_keyboard=True,
-        )
 
 
 class RequestPhoneNumberKeyboard:
@@ -38,7 +32,7 @@ class StyleSelectionKeyboard:
             [InlineKeyboardButton(text="🌟 Фэнтези", callback_data="style_fantasy")],
             [InlineKeyboardButton(text="🤖 Киберпанк", callback_data="style_cyberpunk")],
             [InlineKeyboardButton(text="🎭 Карикатура", callback_data="style_cartoon")],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="to_main")],
+            [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_send_photo")],
         ]
         return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -64,17 +58,20 @@ class ProfileKeyboard:
 class TokenPurchaseKeyboard:
     def __call__(self) -> InlineKeyboardMarkup:
         buttons = [
-            [InlineKeyboardButton(text="150 токенов - 990₽", callback_data="buy_tokens_150_990")],
-            [InlineKeyboardButton(text="350 токенов - 1990₽", callback_data="buy_tokens_350_1990")],
-            [InlineKeyboardButton(text="800 токенов - 3990₽", callback_data="buy_tokens_800_3990")],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="profile")],
-        ]
+            [
+                InlineKeyboardButton(
+                    text=f"{PAYMENT[key]['token_count']} токенов - {PAYMENT[key]['price']}₽",
+                    callback_data=f"buy_tokens_{PAYMENT[key]['token_count']}_{PAYMENT[key]['price']}",
+                ),
+            ]
+            for key in PAYMENT
+        ] + [[InlineKeyboardButton(text="🔙 В профиль", callback_data="profile")]]
+
         return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 __all__ = [
     "MainUserKeyboard",
-    "ToMainMenuKeyboard",
     "StyleSelectionKeyboard",
     "PaymentKeyboard",
     "ProfileKeyboard",

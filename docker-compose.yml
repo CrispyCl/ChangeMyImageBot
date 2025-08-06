@@ -18,6 +18,10 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT}
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
+
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID}
+      YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY}
     volumes:
       - ./logs:/app/logs
     networks:

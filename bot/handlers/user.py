@@ -2,7 +2,8 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from keyboards import ProfileKeyboard, TokenPurchaseKeyboard, ToMainMenuKeyboard
+from config import PAYMENT
+from keyboards import ProfileKeyboard, TokenPurchaseKeyboard
 from models import User
 from states import UserProfile
 
@@ -70,44 +71,13 @@ async def show_token_purchase(callback: CallbackQuery):
     purchase_text = (
         "💰 <b>Покупка токенов</b>\n\n"
         "Выберите пакет токенов:\n\n"
-        "🔹 150 токенов - 990₽\n"
-        "🔹 350 токенов - 1990₽ (скидка 15%)\n"
-        "🔹 800 токенов - 3990₽ (скидка 25%)\n\n"
-        "💡 Чем больше пакет, тем выгоднее цена!"
+        + "\n".join(f"🔹 {PAYMENT[key]['token_count']} токенов - {PAYMENT[key]['price']}₽" for key in PAYMENT.keys())
+        + "\n\n💡 Чем больше пакет, тем выгоднее цена!"
     )
 
     keyboard = TokenPurchaseKeyboard()
     await callback.message.edit_text(purchase_text, reply_markup=keyboard())  # type: ignore
     await callback.answer()
-
-
-@router.message(F.text == "🎨 Изменить изображение")
-async def start_image_processing(message: Message, state: FSMContext, current_user: User):
-    """Начинает процесс обработки изображения"""
-    if current_user.token_count <= 0:
-        no_tokens_text = (
-            "😔 <b>Недостаточно токенов</b>\n\n"
-            "У вас нет токенов для генерации изображений.\n"
-            "Купите токены для продолжения работы!"
-        )
-        keyboard = TokenPurchaseKeyboard()
-        await message.answer(no_tokens_text, reply_markup=keyboard())
-        return
-
-    from states import ImageProcessing
-
-    await state.set_state(ImageProcessing.waiting_for_photo)
-
-    instruction_text = (
-        f"📸 <b>Отправьте фотографию</b>\n\n"
-        f"Пришлите изображение, которое хотите изменить.\n"
-        f"Поддерживаются форматы: JPG, PNG\n\n"
-        f"💰 Стоимость: 1 токен\n"
-        f"💳 Ваш баланс: {current_user.token_count} токенов"
-    )
-
-    keyboard = ToMainMenuKeyboard()
-    await message.answer(instruction_text, reply_markup=keyboard())
 
 
 __all__ = ["router"]

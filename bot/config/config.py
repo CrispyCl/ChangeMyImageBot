@@ -6,6 +6,13 @@ from database import PostgresConfig
 from logger import LoggerConfig
 
 
+PAYMENT = {
+    "cheapest": {"token_count": 30, "price": 990},
+    "average": {"token_count": 250, "price": 1990},
+    "maximum": {"token_count": 500, "price": 3990},
+}
+
+
 @dataclass
 class RedisConfig:
     host: str
@@ -83,4 +90,4 @@ def load_config(path: str | None = None) -> Config:
     )
 
 
-__all__ = ["Config", "load_config"]
+__all__ = ["Config", "load_config", "PAYMENT"]

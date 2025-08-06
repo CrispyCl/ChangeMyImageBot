@@ -6,14 +6,12 @@ from keyboards.user import (
     RequestPhoneNumberKeyboard,
     StyleSelectionKeyboard,
     TokenPurchaseKeyboard,
-    ToMainMenuKeyboard,
 )
 
 
 __all__ = [
     "setup_menu",
     "MainUserKeyboard",
-    "ToMainMenuKeyboard",
     "RequestPhoneNumberKeyboard",
     "StyleSelectionKeyboard",
     "PaymentKeyboard",

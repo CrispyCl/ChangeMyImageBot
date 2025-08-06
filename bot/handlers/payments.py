@@ -120,7 +120,7 @@ async def process_token_purchase(
                         callback_data=f"check_payment_{payment_id}_{tokens}",
                     ),
                 ],
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="profile")],
+                [InlineKeyboardButton(text="🔙 Назад", callback_data="buy_tokens")],
             ],
         )
 
@@ -306,7 +306,7 @@ async def check_payment_status(
             inline_keyboard=[
                 [InlineKeyboardButton(text="💳 Оплатить", url=data.get("active_payment_url"))],
                 [InlineKeyboardButton(text="🔄 Проверить снова", callback_data=f"check_payment_{payment_id}_{tokens}")],
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="profile")],
+                [InlineKeyboardButton(text="🔙 Назад", callback_data="buy_tokens")],
             ],
         )
 
