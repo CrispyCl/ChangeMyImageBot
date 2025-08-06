@@ -23,7 +23,7 @@ class GeminiImageService:
             response = self.client.models.generate_content(
                 model=self.model,
                 contents=[prompt, image],
-                config=GenerateContentConfig(response_modalities=["IMAGE"]),
+                config=GenerateContentConfig(response_modalities=["TEXT", "IMAGE"]),
             )
 
             candidates = response.candidates or []
