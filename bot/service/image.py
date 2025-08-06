@@ -51,9 +51,9 @@ class GeminiImageService:
     def _get_style_prompt(self, style: str) -> str:
         style_prompts = {
             "anime": (
-                "Transform this image into anime style with cel-shading, clean lines, expressive eyes, "
-                "and vibrant colors, while strictly preserving the original pose, facial expression, "
-                "and object placement within the composition."
+                "Convert this image into a stylized anime look with flat colors, cell-shading, soft gradients, "
+                "and clean outlines. Do not add or imagine characters or objects that are not present in the original. "
+                "Preserve the original composition, pose, and object layout exactly."
             ),
             "realism": (
                 "Enhance this image into a photorealistic version with high-resolution textures, natural lighting, "
