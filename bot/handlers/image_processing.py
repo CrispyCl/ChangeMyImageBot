@@ -172,7 +172,6 @@ async def process_style_selection(
                 inline_keyboard=[
                     [InlineKeyboardButton(text="🔄 Другой стиль", callback_data="new_style")],
                     [InlineKeyboardButton(text="📸 Новое фото", callback_data="new_photo")],
-                    [InlineKeyboardButton(text="🏠 Главное меню", callback_data="to_main")],
                 ],
             )
 
