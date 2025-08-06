@@ -251,7 +251,7 @@ async def choose_new_style(callback: CallbackQuery, state: FSMContext, current_u
     )
 
     keyboard = StyleSelectionKeyboard()
-    await callback.message.edit_text(style_text, reply_markup=keyboard())  # type: ignore
+    await callback.message.answer(style_text, reply_markup=keyboard())  # type: ignore
     await callback.answer()
 
 
@@ -275,7 +275,7 @@ async def upload_new_photo(callback: CallbackQuery, state: FSMContext, current_u
             [InlineKeyboardButton(text="🏠 Главное меню", callback_data="to_main")],
         ],
     )
-    await callback.message.edit_text(instruction_text, reply_markup=keyboard)  # type: ignore
+    await callback.message.answer(instruction_text, reply_markup=keyboard)  # type: ignore
     await callback.answer()
 
 
