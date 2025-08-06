@@ -17,35 +17,65 @@ class GeminiImageService:
         """Преобразует изображение в указанный стиль и возвращает сгенерированное изображение (bytes)"""
 
         try:
-            image = Image.open(BytesIO(image_bytes))
+            image = Image.open(BytesIO(image_bytes)).convert("RGB")
             prompt = self._get_style_prompt(style)
 
             response = self.client.models.generate_content(
                 model=self.model,
                 contents=[prompt, image],
-                config=GenerateContentConfig(response_modalities=["TEXT", "IMAGE"]),
+                config=GenerateContentConfig(response_modalities=["IMAGE"]),
             )
 
-            for part in response.candidates[0].content.parts:  # type: ignore
+            candidates = response.candidates or []
+            if not candidates:
+                self.logger.error("No candidates returned from model")
+                return None
+
+            for part in candidates[0].content.parts:  # type: ignore
+                if part.text:
+                    self.logger.debug("Text response from model: %s", part.text)
+                elif part.inline_data:
+                    self.logger.debug(
+                        "Received image data of size: %d bytes",
+                        len(part.inline_data.data),  # type: ignore
+                    )
                 if part.inline_data:
                     return part.inline_data.data
 
             return None
 
         except Exception as e:
-            self.logger.error("Ошибка при генерации изображения: %s (%s)", e, type(e))
+            self.logger.error("Ошибка при генерации изображения [style=%s]: %s (%s)", style, e, type(e))
             return None
 
     def _get_style_prompt(self, style: str) -> str:
         style_prompts = {
-            "anime": "Transform this image into anime style with cel-shading, "
-            "clean lines, expressive eyes, and vibrant colors.",
-            "realism": "Enhance this image into a photorealistic version with professional lighting and textures.",
-            "art": "Transform this image into a classical oil painting with brush strokes and rich colors.",
-            "fantasy": "Transform this image into a fantasy artwork with magical atmosphere and mystical elements.",
-            "cyberpunk": "Transform this image into cyberpunk style with neon "
-            "lights, futuristic details, and dark tones.",
-            "cartoon": "Transform this image into a cartoon with bold colors and simplified features.",
+            "anime": (
+                "Transform this image into anime style with cel-shading, clean lines, expressive eyes, "
+                "and vibrant colors, while strictly preserving the original pose, facial expression, "
+                "and object placement within the composition."
+            ),
+            "realism": (
+                "Enhance this image into a photorealistic version with high-resolution textures, natural lighting, "
+                "and realistic details, while keeping the original pose, proportions, and spatial arrangement intact."
+            ),
+            "art": (
+                "Transform this image into a classical oil painting with visible brush strokes, deep shadows, "
+                "and rich, textured colors, while maintaining the original pose, layout, and subject arrangement."
+            ),
+            "fantasy": (
+                "Transform this image into a magical fantasy artwork with mystical lighting, ethereal elements, "
+                "and imaginative atmosphere. Retain the original pose, character positioning, and scene composition."
+            ),
+            "cyberpunk": (
+                "Transform this image into a cyberpunk style with neon lighting, futuristic technology, dark urban "
+                "tones, and synthetic textures. Make sure the original pose, object layout, "
+                "and character positioning remain unchanged."
+            ),
+            "cartoon": (
+                "Transform this image into a colorful cartoon with bold outlines, simplified shapes, and stylized "
+                "features, while preserving the original pose, gesture, and spatial arrangement of all elements."
+            ),
         }
 
         return style_prompts.get(style, "Transform this image artistically while keeping composition and structure.")
