@@ -2,6 +2,27 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 
 from config import PAYMENT
 
+STYLE_NAMES = {
+    "anime": "🎌 Аниме",
+    "manga": "📖 Манга",
+    "realism": "🎨 Реализм",
+    "oilpainting": "🖌 Масляная живопись",
+    "watercolor": "💧 Акварель",
+    "pixelart": "🟦 Пиксель-арт",
+    "fantasy": "🌟 Фэнтези",
+    "cyberpunk": "🤖 Киберпанк",
+    "steampunk": "⚙️ Стимпанк",
+    "gothic": "🕯 Готика",
+    "synthwave": "🌅 Синтвейв",
+    "comic": "📰 Комикс",
+    "cartoon": "🎭 Карикатура",
+    "isometric": "📐 Изометрия",
+    "sketch": "✏️ Карандашный скетч",
+    "ink": "🖋 Чернильный рисунок",
+    "3d_render": "🖥 3D Рендер",
+    "minimalism": "⚪ Минимализм",
+}
+
 
 class MainUserKeyboard:
     def __call__(self, is_admin: bool) -> ReplyKeyboardMarkup:
@@ -24,16 +45,16 @@ class RequestPhoneNumberKeyboard:
 
 
 class StyleSelectionKeyboard:
-    def __call__(self) -> InlineKeyboardMarkup:
-        buttons = [
-            [InlineKeyboardButton(text="🎌 Аниме", callback_data="style_anime")],
-            [InlineKeyboardButton(text="🎨 Реализм", callback_data="style_realism")],
-            [InlineKeyboardButton(text="🖼️ Арт", callback_data="style_art")],
-            [InlineKeyboardButton(text="🌟 Фэнтези", callback_data="style_fantasy")],
-            [InlineKeyboardButton(text="🤖 Киберпанк", callback_data="style_cyberpunk")],
-            [InlineKeyboardButton(text="🎭 Карикатура", callback_data="style_cartoon")],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_send_photo")],
-        ]
+    def __call__(self):
+        buttons = []
+        row = []
+        for style_id, label in STYLE_NAMES.items():
+            row.append(InlineKeyboardButton(text=label, callback_data=f"style_{style_id}"))
+            if len(row) == 2:
+                buttons.append(row)
+                row = []
+        if row:
+            buttons.append(row)
         return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -76,4 +97,5 @@ __all__ = [
     "PaymentKeyboard",
     "ProfileKeyboard",
     "TokenPurchaseKeyboard",
+    "STYLE_NAMES",
 ]

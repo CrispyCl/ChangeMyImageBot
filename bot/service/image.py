@@ -6,6 +6,34 @@ from google import genai
 from google.genai.types import GenerateContentConfig
 from PIL import Image
 
+STYLE_PROMPTS = {
+    "anime": "Repaint this image in a highly detailed anime style with flat colors, clean outlines, and vibrant tones.",
+    "manga": "Convert this image into black-and-white manga art with high contrast, screentone textures,"
+    " and fine line work.",
+    "realism": "Convert this image into a photorealistic version with detailed textures, natural lighting,"
+    " and realistic proportions.",
+    "oilpainting": "Transform this image into a classic oil painting with visible brush strokes, rich shadows,"
+    " and warm tones.",
+    "watercolor": "Transform this image into a soft watercolor painting with fluid gradients and delicate outlines.",
+    "pixelart": "Transform this image into retro pixel art with a small, consistent color palette and visible"
+    " pixel edges.",
+    "fantasy": "Transform this image into a magical fantasy artwork with glowing accents and mystical atmosphere.",
+    "cyberpunk": "Transform this image into a cyberpunk scene with neon lighting, futuristic elements,"
+    " and dark urban tones.",
+    "steampunk": "Transform this image into steampunk style with brass textures, gears, steam effects,"
+    " and Victorian aesthetics.",
+    "gothic": "Transform this image into gothic art with dark tones, ornate patterns, and dramatic lighting.",
+    "synthwave": "Transform this image into a synthwave style with neon grids, purple-orange gradients,"
+    " and 80s retro-futurism.",
+    "comic": "Transform this image into colorful Western comic book art with bold outlines and dynamic shading.",
+    "cartoon": "Transform this image into a bright cartoon with simplified shapes and playful colors.",
+    "isometric": "Transform this image into isometric game art with clean geometry and soft lighting.",
+    "sketch": "Transform this image into a pencil sketch with fine crosshatching and realistic shading.",
+    "ink": "Transform this image into black ink line art with expressive strokes and no colors.",
+    "3d_render": "Transform this image into a realistic 3D render with soft reflections and depth of field.",
+    "minimalism": "Transform this image into minimalist art with clean shapes, flat colors, and no unnecessary detail.",
+}
+
 
 class GeminiImageService:
     def __init__(self, api_key: str, logger: logging.Logger, model: str = "gemini-2.0-flash-preview-image-generation"):
@@ -13,12 +41,17 @@ class GeminiImageService:
         self.client = genai.Client(api_key=api_key)
         self.logger = logger
 
-    async def transform_image(self, image_bytes: bytes, style: str) -> Optional[bytes]:
+    async def transform_image(
+        self,
+        image_bytes: bytes,
+        style: str,
+        custom_prompt: Optional[str] = None,
+    ) -> Optional[bytes]:
         """Преобразует изображение в указанный стиль и возвращает сгенерированное изображение (bytes)"""
 
         try:
             image = Image.open(BytesIO(image_bytes)).convert("RGB")
-            prompt = self._get_style_prompt(style)
+            prompt = self._get_style_prompt(style=style, custom_prompt=custom_prompt)
 
             response = self.client.models.generate_content(
                 model=self.model,
@@ -29,6 +62,10 @@ class GeminiImageService:
             candidates = response.candidates or []
             if not candidates:
                 self.logger.error("No candidates returned from model")
+                return None
+
+            if not candidates[0].content:
+                self.logger.error("No content into the candidate[0]")
                 return None
 
             for part in candidates[0].content.parts:  # type: ignore
@@ -48,37 +85,20 @@ class GeminiImageService:
             self.logger.error("Ошибка при генерации изображения [style=%s]: %s (%s)", style, e, type(e))
             return None
 
-    def _get_style_prompt(self, style: str) -> str:
-        style_prompts = {
-            "anime": (
-                "Convert this image into a stylized anime look with flat colors, cell-shading, soft gradients, "
-                "and clean outlines. Do not add or imagine characters or objects that are not present in the original. "
-                "Preserve the original composition, pose, and object layout exactly."
-            ),
-            "realism": (
-                "Enhance this image into a photorealistic version with high-resolution textures, natural lighting, "
-                "and realistic details, while keeping the original pose, proportions, and spatial arrangement intact."
-            ),
-            "art": (
-                "Transform this image into a classical oil painting with visible brush strokes, deep shadows, "
-                "and rich, textured colors, while maintaining the original pose, layout, and subject arrangement."
-            ),
-            "fantasy": (
-                "Transform this image into a magical fantasy artwork with mystical lighting, ethereal elements, "
-                "and imaginative atmosphere. Retain the original pose, character positioning, and scene composition."
-            ),
-            "cyberpunk": (
-                "Transform this image into a cyberpunk style with neon lighting, futuristic technology, dark urban "
-                "tones, and synthetic textures. Make sure the original pose, object layout, "
-                "and character positioning remain unchanged."
-            ),
-            "cartoon": (
-                "Transform this image into a colorful cartoon with bold outlines, simplified shapes, and stylized "
-                "features, while preserving the original pose, gesture, and spatial arrangement of all elements."
-            ),
-        }
+    def _get_style_prompt(self, style: str, custom_prompt: Optional[str] = None) -> str:
+        base_instruction = (
+            "Keep the subject, composition, proportions, and perspective exactly the same as the input image. "
+            "Do not add, remove, or move any elements. Maintain the original resolution and framing. "
+            "Only change the artistic style as described below.\n\n"
+        )
+        if custom_prompt:
+            return base_instruction + custom_prompt
 
-        return style_prompts.get(style, "Transform this image artistically while keeping composition and structure.")
+        style_description = STYLE_PROMPTS.get(style.lower())
+        if style_description:
+            return base_instruction + style_description
+
+        return base_instruction + "Apply an artistic transformation keeping all original layout and structure."
 
 
 __all__ = ["GeminiImageService"]

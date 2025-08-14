@@ -4,6 +4,7 @@ from keyboards.user import (
     PaymentKeyboard,
     ProfileKeyboard,
     RequestPhoneNumberKeyboard,
+    STYLE_NAMES,
     StyleSelectionKeyboard,
     TokenPurchaseKeyboard,
 )
@@ -17,4 +18,5 @@ __all__ = [
     "PaymentKeyboard",
     "ProfileKeyboard",
     "TokenPurchaseKeyboard",
+    "STYLE_NAMES",
 ]
