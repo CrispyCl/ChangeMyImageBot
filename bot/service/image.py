@@ -15,7 +15,6 @@ STYLE_PROMPTS = {
     "watercolor": "Transform this image into a soft watercolor painting with fluid gradients and delicate outlines.",
     "comic": "Transform this image into colorful Western comic book art with bold outlines and dynamic shading.",
     "cartoon": "Transform this image into a bright cartoon with simplified shapes and playful colors.",
-    "isometric": "Transform this image into isometric game art with clean geometry and soft lighting.",
     "sketch": "Transform this image into a pencil sketch with fine crosshatching and realistic shading.",
     "ink": "Transform this image into black ink line art with expressive strokes and no colors.",
     "3d_render": "Transform this image into a realistic 3D render with soft reflections and depth of field.",
