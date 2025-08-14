@@ -7,31 +7,28 @@ from google.genai.types import GenerateContentConfig
 from PIL import Image
 
 STYLE_PROMPTS = {
-    "anime": "Repaint this image in a highly detailed anime style with flat colors, clean outlines, and vibrant tones.",
-    "manga": "Convert this image into black-and-white manga art with high contrast, screentone textures,"
-    " and fine line work.",
-    "realism": "Convert this image into a photorealistic version with detailed textures, natural lighting,"
-    " and realistic proportions.",
-    "oilpainting": "Transform this image into a classic oil painting with visible brush strokes, rich shadows,"
-    " and warm tones.",
-    "watercolor": "Transform this image into a soft watercolor painting with fluid gradients and delicate outlines.",
-    "pixelart": "Transform this image into retro pixel art with a small, consistent color palette and visible"
-    " pixel edges.",
-    "fantasy": "Transform this image into a magical fantasy artwork with glowing accents and mystical atmosphere.",
-    "cyberpunk": "Transform this image into a cyberpunk scene with neon lighting, futuristic elements,"
-    " and dark urban tones.",
-    "steampunk": "Transform this image into steampunk style with brass textures, gears, steam effects,"
-    " and Victorian aesthetics.",
-    "gothic": "Transform this image into gothic art with dark tones, ornate patterns, and dramatic lighting.",
-    "synthwave": "Transform this image into a synthwave style with neon grids, purple-orange gradients,"
-    " and 80s retro-futurism.",
-    "comic": "Transform this image into colorful Western comic book art with bold outlines and dynamic shading.",
-    "cartoon": "Transform this image into a bright cartoon with simplified shapes and playful colors.",
-    "isometric": "Transform this image into isometric game art with clean geometry and soft lighting.",
-    "sketch": "Transform this image into a pencil sketch with fine crosshatching and realistic shading.",
-    "ink": "Transform this image into black ink line art with expressive strokes and no colors.",
-    "3d_render": "Transform this image into a realistic 3D render with soft reflections and depth of field.",
-    "minimalism": "Transform this image into minimalist art with clean shapes, flat colors, and no unnecessary detail.",
+    "anime": "Apply anime style ONLY as visual filter. Preserve EXACT composition, subjects, and perspective. "
+    "Use flat colors, clean outlines, vibrant tones. NO added/removed elements, NO content changes.",
+    "manga": "Apply manga style ONLY as visual filter. Preserve EXACT composition, subjects, and perspective. "
+    "Convert to black-white with high contrast, screentones. NO content changes, NO added details.",
+    "oilpainting": "Apply oil painting style ONLY as visual filter. Preserve EXACT composition. "
+    "Use visible brush strokes, rich shadows, warm tones. NO added/removed elements.",
+    "watercolor": "Apply watercolor style ONLY as visual filter. Preserve EXACT composition. "
+    "Use fluid gradients, delicate outlines, soft blending. NO structural changes.",
+    "comic": "Apply Western comic style ONLY as visual filter. Preserve EXACT composition. "
+    "Use bold outlines, dynamic shading, vibrant colors. NO added elements.",
+    "cartoon": "Apply cartoon style ONLY as visual filter. Preserve EXACT composition. "
+    "Use simplified shapes, playful colors, clean lines. NO position changes.",
+    "isometric": "Apply isometric game art style ONLY as visual filter. Preserve EXACT composition. "
+    "Use clean geometry, soft lighting, consistent angles. NO perspective changes.",
+    "sketch": "Apply pencil sketch style ONLY as visual filter. Preserve EXACT composition. "
+    "Use fine crosshatching, realistic shading, grayscale. NO added details.",
+    "ink": "Apply ink line art style ONLY as visual filter. Preserve EXACT composition. "
+    "Use expressive strokes, black-white only, no colors. NO element modifications.",
+    "3d_render": "Apply 3D render style ONLY as visual filter. Preserve EXACT composition. "
+    "Use soft reflections, depth of field, realistic lighting. NO model changes.",
+    "minimalism": "Apply minimalist style ONLY as visual filter. Preserve EXACT composition. "
+    "Use clean shapes, flat colors, reduced details. NO element removal/addition.",
 }
 
 
@@ -40,6 +37,12 @@ class GeminiImageService:
         self.model = model
         self.client = genai.Client(api_key=api_key)
         self.logger = logger
+        self.base_prompt = (
+            "STRICTLY apply requested style as visual filter ONLY. "
+            "PRESERVE EXACTLY: composition, subjects, perspective, details. "
+            "DO NOT: add/remove elements, change positions, generate new content. "
+            "OUTPUT: Stylized version of input image."
+        )
 
     async def transform_image(
         self,
@@ -60,25 +63,17 @@ class GeminiImageService:
             )
 
             candidates = response.candidates or []
-            if not candidates:
-                self.logger.error("No candidates returned from model")
-                return None
 
-            if not candidates[0].content:
-                self.logger.error("No content into the candidate[0]")
-                return None
+            for candidate in candidates:
+                if not candidate.content:
+                    continue
+                parts = candidate.content.parts or []
+                for part in parts:
+                    if part.inline_data:
+                        self.logger.debug("Received image: %d bytes", len(part.inline_data.data or []))
+                        return part.inline_data.data
 
-            for part in candidates[0].content.parts:  # type: ignore
-                if part.text:
-                    self.logger.debug("Text response from model: %s", part.text)
-                elif part.inline_data:
-                    self.logger.debug(
-                        "Received image data of size: %d bytes",
-                        len(part.inline_data.data),  # type: ignore
-                    )
-                if part.inline_data:
-                    return part.inline_data.data
-
+            self.logger.error("No image data in response. Candidates: %d", len(candidates))
             return None
 
         except Exception as e:
@@ -86,19 +81,18 @@ class GeminiImageService:
             return None
 
     def _get_style_prompt(self, style: str, custom_prompt: Optional[str] = None) -> str:
-        base_instruction = (
-            "Keep the subject, composition, proportions, and perspective exactly the same as the input image. "
-            "Do not add, remove, or move any elements. Maintain the original resolution and framing. "
-            "Only change the artistic style as described below.\n\n"
-        )
+        parts = [self.base_prompt]
+
         if custom_prompt:
-            return base_instruction + custom_prompt
+            parts.append(custom_prompt)
+        else:
+            style_prompt = STYLE_PROMPTS.get(style.lower())
+            if style_prompt:
+                parts.append(style_prompt)
+            else:
+                parts.append(f"Apply {style} style filter while preserving original content exactly.")
 
-        style_description = STYLE_PROMPTS.get(style.lower())
-        if style_description:
-            return base_instruction + style_description
-
-        return base_instruction + "Apply an artistic transformation keeping all original layout and structure."
+        return "\n\n".join(parts)
 
 
 __all__ = ["GeminiImageService"]
