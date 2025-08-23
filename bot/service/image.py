@@ -21,10 +21,13 @@ STYLE_PROMPTS = {
     "minimalism": "Transform this image into minimalist art with clean shapes, flat colors, and no unnecessary detail.",
     "cyberpunk": "Transform this image into a neon cyberpunk aesthetic with glowing lights, futuristic city vibes,"
     " dark tones, and high contrast.",
-    "makeup": "Apply realistic and elegant makeup to the person in the image, enhancing eyes, lips, "
-    "and skin tone without altering facial structure.",
-    "business": "Dress the person in a formal business suit or office attire while keeping pose, proportions, "
-    "and expression unchanged.",
+    "makeup": "Apply light and natural makeup to the person in the image. Enhance the eyes, lips, and skin tone subtly,"
+    " without changing facial features, proportions, hairstyle, or overall appearance. "
+    "Makeup should look minimal, as if for a casual or professional photo, not artistic or heavy.",
+    "business": "Dress the person in a formal business suit or office attire while keeping the pose, proportions, "
+    "facial features, skin tone, and natural appearance unchanged. "
+    "Do not alter the body shape, neck, or add unrealistic folds. "
+    "Only adjust clothing realistically, as if the person were photographed wearing business attire.",
 }
 
 
