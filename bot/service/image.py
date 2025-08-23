@@ -25,10 +25,8 @@ STYLE_PROMPTS = {
     "texture, facial features, proportions, hairstyle, or expression. Only apply subtle adjustments, such as a soft "
     "lipstick tint, slight eyeliner, and gentle smoothing of skin tone. Makeup must look minimal and realistic"
     ", as if barely noticeable.",
-    "business": "Dress the person in a formal business suit or office attire while keeping the pose, proportions, "
-    "facial features, skin tone, and natural appearance unchanged. "
-    "Do not alter the body shape, neck, or add unrealistic folds. "
-    "Only adjust clothing realistically, as if the person were photographed wearing business attire.",
+    "business": "Dress the person in a formal business suit or office attire while keeping pose, proportions, "
+    "and expression unchanged.",
 }
 
 
